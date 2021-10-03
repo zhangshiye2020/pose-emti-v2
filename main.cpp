@@ -1,11 +1,11 @@
-#include <iostream>
+﻿#include <iostream>
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc.hpp>
 #include "circledec.h"
 
 using namespace std;
 int main(int argc, char** argv) {
-	cv::Mat mat = cv::imread("C:\\Users\\zhang\\Pictures\\Image_20210929204316983.bmp");
+	cv::Mat mat = cv::imread("C:\\Users\\zhang\\Pictures\\Image_20210929204244455.bmp");
 	//cout << mat.channels() << endl;
 	cv::Mat dst,pre_src;
 	pretreatment(mat, pre_src);

@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #ifndef __CIRCLEDEC_H_
 #define __CIRCLEDEC_H_
 
@@ -13,28 +13,28 @@ inline double getRoundness(double area,double arcLen) {
 }
 
 /*
-* »­Ö±·½Í¼£¬Í³¼ÆÓÃ£¨µ÷ÊÔ£©
+* ç”»ç›´æ–¹å›¾ï¼Œç»Ÿè®¡ç”¨ï¼ˆè°ƒè¯•ï¼‰
 */
 void drawHist(cv::Mat& src,cv::Mat &dst) {
 
 }
 
 /*
-* ×Ô¶¯gamma½ÃÕı
+* è‡ªåŠ¨gammaçŸ«æ­£
 */
 void autoGamma(cv::Mat& src, cv::Mat& dst) {
 	const int channels = src.channels();
 	const int type = src.type();
-	assert(type == CV_8U);	// Ö»ÏŞ8bit
+	assert(type == CV_8U);	// åªé™8bit
 
-	// ¼ÆËãÖĞÎ»Êı
+	// è®¡ç®—ä¸­ä½æ•°
 	cv::Scalar mean_scalar = cv::mean(src);
 	double mean = mean_scalar[0];
 
-	// Ä³ÆªÂÛÎÄµÄgamma valueÉèÖÃÖµ
+	// æŸç¯‡è®ºæ–‡çš„gamma valueè®¾ç½®å€¼
 	double gamma_value = std::log10(0.5) / std::log10(mean / 255);
 	
-	// ¹éÒ»»¯£¬È»ºógamma±ä»»
+	// å½’ä¸€åŒ–ï¼Œç„¶ågammaå˜æ¢
 	cv::Mat norm,gamma;
 	cv::normalize(src, norm, 1.0, 0.0, cv::NORM_MINMAX,CV_64F);
 	//src.convertTo(norm,CV_64F,1/255.0);
@@ -44,33 +44,33 @@ void autoGamma(cv::Mat& src, cv::Mat& dst) {
 }
 
 /*
-* Ô¤´¦Àí£¬°üº¬Ò»Ğ©Í¼ÏñÔöÇ¿·½·¨
+* é¢„å¤„ç†ï¼ŒåŒ…å«ä¸€äº›å›¾åƒå¢å¼ºæ–¹æ³•
 */
 void pretreatment(cv::Mat &src, cv::Mat &dst) {
 	cv::Mat gray, bin, equalize;
 	cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
 	cv::imwrite("gray.jpg", gray);
 	
-	// Ö±·½Í¼¾ùºâËã·¨
+	// ç›´æ–¹å›¾å‡è¡¡ç®—æ³•
 	cv::equalizeHist(gray, equalize);
 	cv::imwrite("equalize.jpg", equalize);
 
-	// ¶şÖµ»¯: OTSU
+	// äºŒå€¼åŒ–: OTSU
 	//cv::threshold(equalize, bin, 24, 255, cv::THRESH_OTSU);
 	//cv::imwrite("otsu.jpg", bin);
 
-	// ¶şÖµ»¯£¬×ÔÊÊÓ¦£¬ÏÈÓÃ¸ÃËã·¨ÊÔÊÔ
+	// äºŒå€¼åŒ–ï¼Œè‡ªé€‚åº”ï¼Œå…ˆç”¨è¯¥ç®—æ³•è¯•è¯•
 	cv::Mat adaptBin;
 	cv::adaptiveThreshold(equalize, adaptBin, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 131,21);
 	cv::bitwise_not(adaptBin, adaptBin);
 	cv::imwrite("adaptiveBinary.jpg", adaptBin);
 
-	// ½·ÑÎÈ¥Ôë(ÖĞÖµÂË²¨)
+	// æ¤’ç›å»å™ª(ä¸­å€¼æ»¤æ³¢)
 	cv::Mat blur;
 	cv::medianBlur(adaptBin, dst, 5);
 	cv::imwrite("blur.jpg", dst);
 
-	// ±ÕÔËËã
+	// é—­è¿ç®—
 	//cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
 	//cv::morphologyEx(adaptBin, dst, cv::MORPH_CLOSE, kernel);
 	//cv::imwrite("close.jpg", dst);
@@ -79,20 +79,20 @@ void pretreatment(cv::Mat &src, cv::Mat &dst) {
 void fitCircle(std::vector<cv::Point> &contour,CircleType &c) {
 	cv::RotatedRect rect = cv::fitEllipse(contour);
 	cv::Point2f center = rect.center;
-	float r = (rect.size.width + rect.size.height) / 2;
+	float r = (rect.size.width + rect.size.height) / 4;
 	c[0] = center.x;
 	c[1] = center.y;
 	c[2] = r;
 }
 
 /*
-* Í¨¹ıÂÖÀªÕÒµ½Ô²
-* src:		Í¨¹ıÍ¼Ïñ´¦ÀíºóµÄÍ¼Æ¬,¶şÖµ»¯Í¼Æ¬
-* circles:	ÕÒµ½µÄÒÉËÆÔ²ĞÎ	
+* é€šè¿‡è½®å»“æ‰¾åˆ°åœ†
+* src:		é€šè¿‡å›¾åƒå¤„ç†åçš„å›¾ç‰‡,äºŒå€¼åŒ–å›¾ç‰‡
+* circles:	æ‰¾åˆ°çš„ç–‘ä¼¼åœ†å½¢	
 */
-void findCircleByContours(cv::Mat &src,std::vector<CircleType> &circles) {	// Í¨¹ıÂÖÀªÕÒµ½Ô²
+void findCircleByContours(cv::Mat &src,std::vector<CircleType> &circles) {	// é€šè¿‡è½®å»“æ‰¾åˆ°åœ†
 	std::vector<std::vector<cv::Point>> contours;
-	std::vector<cv::Vec4i> hierarchy; // Ê÷ĞÎ½á¹¹²ã´Î¹ØÏµ
+	std::vector<cv::Vec4i> hierarchy; // æ ‘å½¢ç»“æ„å±‚æ¬¡å…³ç³»
 	cv::findContours(src, contours,hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_NONE);
 	//cv::drawContours()
 	cv::Mat pix(src.rows, src.cols, CV_8UC3,cv::Scalar(0,0,0));
@@ -121,7 +121,7 @@ void findCircleByContours(cv::Mat &src,std::vector<CircleType> &circles) {	// Í¨
 void findCircleByConnectedComponents(cv::Mat src,std::vector<CircleType> &circles) {
 	//pretreatment(src, );
 	cv::Mat labels, stats, centroids;
-	int n_components = cv::connectedComponentsWithStats(src, labels, stats, centroids);	// Á¬Í¨Óò
+	int n_components = cv::connectedComponentsWithStats(src, labels, stats, centroids);	// è¿é€šåŸŸ
 	for (int i = 0; i < n_components; i++) {
 		int x = stats.at<int>(i, cv::CC_STAT_LEFT);
 		int y = stats.at<int>(i, cv::CC_STAT_TOP);
