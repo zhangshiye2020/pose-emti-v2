@@ -1,6 +1,9 @@
 ﻿#ifndef __CIRCLEDEC_H_
 #define __CIRCLEDEC_H_
 
+#define _DEBUG
+#define CIRCLE_NUM 9
+
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc.hpp>
 #include <iostream>
@@ -16,6 +19,10 @@ inline double getRoundness(double area, double arcLen) {
 * 画直方图，统计用（调试）
 */
 void drawHist(cv::Mat &src, cv::Mat &dst) {
+
+}
+
+void drawBoard(std::vector<std::vector<cv::Point>> contours) {   // 绘制板
 
 }
 
@@ -59,12 +66,12 @@ void pretreatment(cv::Mat &src, cv::Mat &dst) {
 
     // 二值化，自适应，先用该算法试试
     cv::Mat adaptBin;
-    cv::adaptiveThreshold(equalize, adaptBin, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 131, 21);
+    cv::adaptiveThreshold(equalize, adaptBin, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 191, 21);
     cv::bitwise_not(adaptBin, adaptBin);
 
     // 椒盐去噪(中值滤波)
     cv::Mat blur;
-    cv::medianBlur(adaptBin, dst, 5);
+    cv::medianBlur(adaptBin, dst, 3);
 
 #ifdef _DEBUG
     cv::imwrite("gray.jpg", gray);
@@ -111,11 +118,11 @@ void filterContours(std::vector<std::vector<cv::Point>> &contours, std::vector<c
         std::cout << i << ": " << area << ", " << roundness << ", " << hierarchy[i][3] << std::endl;
 #endif
     }
-    for (auto iter = map.begin(); iter != map.end(); iter++) {
+    for (auto iter = map.begin(); iter != map.end(); iter++) {  // 依据父节点做二次赛选
         if (iter->first == -1) {    // 可以认为多余了
             continue;
         }
-        if ((iter->second).size() == 9) {    // 误检率要求最低，同一个父节点要求有9个
+        if ((iter->second).size() == CIRCLE_NUM) {    // 误检率要求最低，同一个父节点要求有9个
 //            contoursIndex.clear();
 //            contoursIndex.insert(contoursIndex.begin(), iter->second.begin(), iter->second.end());
             contoursIndex.assign(iter->second.begin(), iter->second.end());
@@ -132,6 +139,12 @@ void findCircleByContours(cv::Mat &src, std::vector<CircleType> &circles) {    /
     std::vector<std::vector<cv::Point>> contours;
     std::vector<cv::Vec4i> hierarchy; // 树形结构层次关系
     cv::findContours(src, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_NONE);
+#ifdef _DEBUG
+    cv::Mat picFul(src.rows, src.cols, CV_8UC3, cv::Scalar(0, 0, 0));
+    cv::drawContours(picFul, contours, -1, cv::Scalar(255, 255, 255));
+    cv::imwrite("contoursFull.jpg", picFul);
+#endif
+
     std::vector<int> contoursIndex;
     filterContours(contours, hierarchy, contoursIndex); // 圆形轮廓下标
 
@@ -139,7 +152,7 @@ void findCircleByContours(cv::Mat &src, std::vector<CircleType> &circles) {    /
 //    std::vector<std::vector<cv::Point>> circleContours;
     CircleType c;
     std::vector<cv::Point> circleContour;
-    for (int i = 0; i < contoursIndex.size(); i++) {
+    for (int i = 0; i < CIRCLE_NUM; i++) {
         int cIndex = contoursIndex[i];
         circleContour = contours[cIndex];
         fitCircle(circleContour, c);

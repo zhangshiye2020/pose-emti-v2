@@ -21,7 +21,7 @@ void filterContoursByArea(cv::Mat contourAreas, int classes) {
 }
 
 int main(int argc, char **argv) {
-	cv::Mat mat = cv::imread("C:\\Users\\zhang\\Pictures\\Image_20210929204244455.bmp");
+	cv::Mat mat = cv::imread("C:\\Users\\zhang\\Pictures\\Image_20210929204354303.bmp");
 	//cout << mat.channels() << endl;
 	cv::Mat dst,pre_src;
 	pretreatment(mat, pre_src);
