@@ -24,6 +24,8 @@ endif()
 project(pose-emti-v2)
 set(SOURCE_FILES main.cpp)
 
+ADD_DEFINITIONS(-D_DEBUG=${CMAKE_CXX_FLAGS_DEBUG})
+
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
