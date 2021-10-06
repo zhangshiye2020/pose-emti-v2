@@ -3,6 +3,8 @@
 
 #define _DEBUG
 #define CIRCLE_NUM 9
+#define BOARD_ROWS 3
+#define BOARD_COLS 3
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc.hpp>
@@ -27,12 +29,41 @@ void drawBoard(std::vector<std::vector<cv::Point>> contours) {   // 绘制板
 }
 
 /*
+ * gamma矫正
+ */
+void gammaCorrection(cv::Mat &src, cv::Mat &dst, double gamma) {
+    unsigned char lut[256];
+    for (int i = 0; i < 256; i++) {
+        lut[i] = cv::saturate_cast<uchar>(pow((float) i / 255, gamma) * 255.0f);
+    }
+    dst = src.clone();
+    switch (src.type()) {
+        case CV_8UC1: {
+            for (auto it = dst.begin<uchar>(); it != dst.end<uchar>(); it++) {
+                *it = lut[(*it)];
+            }
+            break;
+        }
+        case CV_8UC3: {
+            for (auto it = dst.begin<cv::Vec3b>(); it != dst.end<cv::Vec3b>(); it++) {
+                (*it)[0] = lut[(*it)[0]];
+                (*it)[1] = lut[(*it)[1]];
+                (*it)[2] = lut[(*it)[2]];
+            }
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+/*
 * 自动gamma矫正
 */
 void autoGamma(cv::Mat &src, cv::Mat &dst) {
     const int channels = src.channels();
     const int type = src.type();
-    assert(type == CV_8U);    // 只限8bit
+    assert(type == CV_8U || type == CV_8UC3);    // 只限8bit
 
     // 计算中位数
     cv::Scalar mean_scalar = cv::mean(src);
@@ -40,7 +71,9 @@ void autoGamma(cv::Mat &src, cv::Mat &dst) {
 
     // 某篇论文的gamma value设置值
     double gamma_value = std::log10(0.5) / std::log10(mean / 255);
+//    GammaCorrection(src, dst, gamma_value);
 
+//    double gamma_value = 0.3;
     // 归一化，然后gamma变换
     cv::Mat norm, gamma;
     cv::normalize(src, norm, 1.0, 0.0, cv::NORM_MINMAX, CV_64F);
@@ -48,10 +81,14 @@ void autoGamma(cv::Mat &src, cv::Mat &dst) {
     cv::pow(norm, gamma_value, gamma);
 
     cv::convertScaleAbs(gamma, dst, 255.0);
+
+#ifdef _DEBUG
+    cv::imwrite("gamma.jpg", dst);
+#endif
 }
 
 /*
-* 预处理，包含一些图像增强方法
+* 预处理，包含一些图像增强方法，主要包括直方图均衡，二值化自适应，中值滤波
 */
 void pretreatment(cv::Mat &src, cv::Mat &dst) {
     cv::Mat gray, bin, equalize;
@@ -59,6 +96,10 @@ void pretreatment(cv::Mat &src, cv::Mat &dst) {
 
     // 直方图均衡算法
     cv::equalizeHist(gray, equalize);
+
+    // gamma矫正
+//    cv::Mat gamma;
+//    autoGamma(gray, gamma);
 
     // 二值化: OTSU
     //cv::threshold(equalize, bin, 24, 255, cv::THRESH_OTSU);
@@ -83,6 +124,8 @@ void pretreatment(cv::Mat &src, cv::Mat &dst) {
 
 /*
  * 从轮廓中拟合圆，算法粗糙
+ * contour:vector<Point> 圆的轮廓
+ * c:CircleType-Vec3f    圆
  */
 void fitCircle(std::vector<cv::Point> &contour, CircleType &c) {
     cv::RotatedRect rect = cv::fitEllipse(contour);
@@ -95,6 +138,10 @@ void fitCircle(std::vector<cv::Point> &contour, CircleType &c) {
 
 /*
  * 过滤无效的边缘，返回轮廓下标
+ * 主要通过轮廓的面积(> 50)、圆度、以及结构关系判断
+ * contours:   边缘
+ * hierarchy:  轮廓之间的树形关系
+ * contoursIndex: 圆形轮廓下标
  */
 void filterContours(std::vector<std::vector<cv::Point>> &contours, std::vector<cv::Vec4i> &hierarchy,
                     std::vector<int> &contoursIndex) {
@@ -114,9 +161,7 @@ void filterContours(std::vector<std::vector<cv::Point>> &contours, std::vector<c
         int p = hierarchy[i][3];
 //        map.at(p).push_back(i);
         map[p].push_back(i);
-#ifdef _DEBUG
-        std::cout << i << ": " << area << ", " << roundness << ", " << hierarchy[i][3] << std::endl;
-#endif
+
     }
     for (auto iter = map.begin(); iter != map.end(); iter++) {  // 依据父节点做二次赛选
         if (iter->first == -1) {    // 可以认为多余了
@@ -125,6 +170,10 @@ void filterContours(std::vector<std::vector<cv::Point>> &contours, std::vector<c
         if ((iter->second).size() == CIRCLE_NUM) {    // 误检率要求最低，同一个父节点要求有9个
 //            contoursIndex.clear();
 //            contoursIndex.insert(contoursIndex.begin(), iter->second.begin(), iter->second.end());
+#ifdef _DEBUG
+//            std::cout << i << ": " << area << ", " << roundness << ", " << hierarchy[i][3] << std::endl;
+            std::cout << "PIndex: " << iter->first << ", Num: " << CIRCLE_NUM;
+#endif
             contoursIndex.assign(iter->second.begin(), iter->second.end());
         }
     }
@@ -133,7 +182,7 @@ void filterContours(std::vector<std::vector<cv::Point>> &contours, std::vector<c
 /*
 * 通过轮廓找到圆
 * src:		通过图像处理后的图片,二值化图片
-* circles:	找到的疑似圆形	
+* circles:	圆形
 */
 void findCircleByContours(cv::Mat &src, std::vector<CircleType> &circles) {    // 通过轮廓找到圆
     std::vector<std::vector<cv::Point>> contours;

@@ -21,8 +21,11 @@ void filterContoursByArea(cv::Mat contourAreas, int classes) {
 }
 
 int main(int argc, char **argv) {
-	cv::Mat mat = cv::imread("C:\\Users\\zhang\\Pictures\\Image_20210929204354303.bmp");
-	//cout << mat.channels() << endl;
+    cv::Mat mat = cv::imread("C:\\Users\\zhang\\Pictures\\Image_20210929204354303.bmp");
+//    cv::Mat dst;
+//    cv::cvtColor(mat, mat, cv::COLOR_BGR2GRAY);
+//    autoGamma(mat, dst);
+//    cout << mat.channels() << endl;
 	cv::Mat dst,pre_src;
 	pretreatment(mat, pre_src);
 	vector<CircleType> circles;
@@ -36,6 +39,8 @@ int main(int argc, char **argv) {
 	}
     cv::imwrite("circle.jpg", mat);
 #endif
+
+
 
 //    vector<float> v{50.5, 56.5, 1031.5, 1059, 8021.5, 84, 93.5, 93.5, 88, 93, 88, 84, 88.5, 86.5, 55.5};
 //    cv::Mat mat(v);
