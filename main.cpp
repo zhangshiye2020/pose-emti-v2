@@ -5,7 +5,9 @@
 #include <time.h>
 
 using namespace std;
-
+/*
+ * 聚类算法分类，但是效果不一定好
+ */
 void filterContoursByArea(cv::Mat contourAreas, int classes) {
     // 聚类算法
     cv::Mat labels;
@@ -38,8 +40,10 @@ int main(int argc, char **argv) {
         vector<CircleType> circles;
         findCircleByContours(pre_src, circles);
         clock_t end = clock();
+#ifdef DEBUG
         cout << "Time of total: " << double(end - start) / CLOCKS_PER_SEC << "s" << endl;
-#ifdef _DEBUG
+#endif
+#ifdef DEBUG
         for (int i = 0; i < circles.size(); i++) {
             cv::Vec3f c = circles[i];
             cv::Point center(c[0], c[1]);

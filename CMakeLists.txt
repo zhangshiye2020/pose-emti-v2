@@ -8,7 +8,7 @@ endif()
 set(CMAKE_TOOLCHAIN_FILE $ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake CACHE STRING "")
 
 # 架构
-set(CMAKE_GENERATOR_PLATFORM x64)
+#set(CMAKE_GENERATOR_PLATFORM x64)
 if(CMAKE_SYSTEM_NAME MATCHES "Windows")
     set(ENV{VCPKG_DEFAULT_TRIPLET} "x64-windows")
 elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")

@@ -1,7 +1,7 @@
 ﻿#ifndef __CIRCLEDEC_H_
 #define __CIRCLEDEC_H_
 
-#define _DEBUG
+//#define DEBUG
 #define CIRCLE_NUM 9
 #define BOARD_ROWS 3
 #define BOARD_COLS 3
@@ -83,9 +83,10 @@ void autoGamma(cv::Mat &src, cv::Mat &dst) {
 
     cv::convertScaleAbs(gamma, dst, 255.0);
 
-#ifdef _DEBUG
+#ifdef DEBUG
     cv::imwrite("gamma.jpg", dst);
 #endif
+
 }
 
 /*
@@ -116,9 +117,10 @@ void pretreatment(cv::Mat &src, cv::Mat &dst) {
     cv::Mat blur;
     cv::medianBlur(adaptBin, dst, 3);
     clock_t end = clock();
+#ifdef DEBUG
     std::cout << "Time of pretreatment: " << double(end - start) / CLOCKS_PER_SEC << "s" << std::endl;
-
-#ifdef _DEBUG
+#endif
+#ifdef DEBUG
     cv::imwrite("gray.jpg", gray);
     cv::imwrite("equalize.jpg", equalize);
     cv::imwrite("adaptiveBinary.jpg", adaptBin);
@@ -172,10 +174,11 @@ void filterContours(std::vector<std::vector<cv::Point>> &contours, std::vector<c
         if (iter->first == -1) {    // 可以认为多余了
             continue;
         }
+        // todo: 鲁棒性不强...
         if ((iter->second).size() == CIRCLE_NUM) {    // 误检率要求最低，同一个父节点要求有9个
 //            contoursIndex.clear();
 //            contoursIndex.insert(contoursIndex.begin(), iter->second.begin(), iter->second.end());
-#ifdef _DEBUG
+#ifdef DEBUG
 //            std::cout << i << ": " << area << ", " << roundness << ", " << hierarchy[i][3] << std::endl;
             std::cout << "PIndex: " << iter->first << ", Num: " << CIRCLE_NUM << std::endl;
 #endif
@@ -183,8 +186,9 @@ void filterContours(std::vector<std::vector<cv::Point>> &contours, std::vector<c
         }
     }
     clock_t end = clock();
+#ifdef DEBUG
     std::cout << "Time of filter contour: " << double(end - start) / CLOCKS_PER_SEC << "s" << std::endl;
-
+#endif
 }
 
 /*
@@ -199,8 +203,8 @@ void findCircleByContours(cv::Mat &src, std::vector<CircleType> &circles) {    /
     std::vector<cv::Vec4i> hierarchy; // 树形结构层次关系
     cv::findContours(src, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_NONE);
     clock_t end = clock();
+#ifdef DEBUG
     std::cout << "Time of find contours: " << double(end - start) / CLOCKS_PER_SEC << "s" << std::endl;
-#ifdef _DEBUG
     cv::Mat picFul(src.rows, src.cols, CV_8UC3, cv::Scalar(0, 0, 0));
     cv::drawContours(picFul, contours, -1, cv::Scalar(255, 255, 255));
     cv::imwrite("contoursFull.jpg", picFul);
@@ -221,11 +225,12 @@ void findCircleByContours(cv::Mat &src, std::vector<CircleType> &circles) {    /
         circles.push_back(c);
     }
     clock_t endOfFitCircle = clock();
+#ifdef DEBUG
     std::cout << "Time of fit circle: " << double(endOfFitCircle - startOfFitCircle) / CLOCKS_PER_SEC << "s"
               << std::endl;
+#endif
 
-
-#ifdef _DEBUG
+#ifdef DEBUG
     cv::Mat pic(src.rows, src.cols, CV_8UC3, cv::Scalar(0, 0, 0));
     for (int i = 0; i < contoursIndex.size(); i++) {
         int cIndex = contoursIndex[i];
@@ -235,7 +240,9 @@ void findCircleByContours(cv::Mat &src, std::vector<CircleType> &circles) {    /
 #endif
 }
 
-
+/*
+ * 已废弃，该连通域函数结果无法计算出其周长
+ */
 void findCircleByConnectedComponents(cv::Mat src, std::vector<CircleType> &circles) {
     //pretreatment(src, );
     cv::Mat labels, stats, centroids;

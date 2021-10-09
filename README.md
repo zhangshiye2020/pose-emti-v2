@@ -7,6 +7,10 @@
     * "Visual Studio 2019"
     * CMake
 
-## Visual Studio 2019
+## Windows
 
-找cmake编译生成
+下载Visual Studio 16 2019工具链，用vcpkg安装opencv4包，然后CMake编译生成
+
+## Linux
+
+设置USE_VCPKG=OFF，然后CMake编译生成
