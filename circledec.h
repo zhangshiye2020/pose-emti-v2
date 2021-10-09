@@ -10,6 +10,7 @@
 #include <opencv2/imgproc.hpp>
 #include <iostream>
 #include <unordered_map>
+#include <time.h>
 
 typedef cv::Vec3f CircleType;    // float x,y,r
 
@@ -91,6 +92,7 @@ void autoGamma(cv::Mat &src, cv::Mat &dst) {
 * 预处理，包含一些图像增强方法，主要包括直方图均衡，二值化自适应，中值滤波
 */
 void pretreatment(cv::Mat &src, cv::Mat &dst) {
+    clock_t start = clock();
     cv::Mat gray, bin, equalize;
     cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
 
@@ -113,6 +115,8 @@ void pretreatment(cv::Mat &src, cv::Mat &dst) {
     // 椒盐去噪(中值滤波)
     cv::Mat blur;
     cv::medianBlur(adaptBin, dst, 3);
+    clock_t end = clock();
+    std::cout << "Time of pretreatment: " << double(end - start) / CLOCKS_PER_SEC << "s" << std::endl;
 
 #ifdef _DEBUG
     cv::imwrite("gray.jpg", gray);
@@ -145,6 +149,7 @@ void fitCircle(std::vector<cv::Point> &contour, CircleType &c) {
  */
 void filterContours(std::vector<std::vector<cv::Point>> &contours, std::vector<cv::Vec4i> &hierarchy,
                     std::vector<int> &contoursIndex) {
+    clock_t start = clock();
     std::unordered_map<int, std::vector<int>> map;   // 父子关系图
     double area, arcLen;
     for (int i = 0; i < contours.size(); i++) {
@@ -172,11 +177,14 @@ void filterContours(std::vector<std::vector<cv::Point>> &contours, std::vector<c
 //            contoursIndex.insert(contoursIndex.begin(), iter->second.begin(), iter->second.end());
 #ifdef _DEBUG
 //            std::cout << i << ": " << area << ", " << roundness << ", " << hierarchy[i][3] << std::endl;
-            std::cout << "PIndex: " << iter->first << ", Num: " << CIRCLE_NUM;
+            std::cout << "PIndex: " << iter->first << ", Num: " << CIRCLE_NUM << std::endl;
 #endif
             contoursIndex.assign(iter->second.begin(), iter->second.end());
         }
     }
+    clock_t end = clock();
+    std::cout << "Time of filter contour: " << double(end - start) / CLOCKS_PER_SEC << "s" << std::endl;
+
 }
 
 /*
@@ -185,9 +193,13 @@ void filterContours(std::vector<std::vector<cv::Point>> &contours, std::vector<c
 * circles:	圆形
 */
 void findCircleByContours(cv::Mat &src, std::vector<CircleType> &circles) {    // 通过轮廓找到圆
+
+    clock_t start = clock();
     std::vector<std::vector<cv::Point>> contours;
     std::vector<cv::Vec4i> hierarchy; // 树形结构层次关系
     cv::findContours(src, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_NONE);
+    clock_t end = clock();
+    std::cout << "Time of find contours: " << double(end - start) / CLOCKS_PER_SEC << "s" << std::endl;
 #ifdef _DEBUG
     cv::Mat picFul(src.rows, src.cols, CV_8UC3, cv::Scalar(0, 0, 0));
     cv::drawContours(picFul, contours, -1, cv::Scalar(255, 255, 255));
@@ -199,6 +211,7 @@ void findCircleByContours(cv::Mat &src, std::vector<CircleType> &circles) {    /
 
     // 轮廓
 //    std::vector<std::vector<cv::Point>> circleContours;
+    clock_t startOfFitCircle = clock();
     CircleType c;
     std::vector<cv::Point> circleContour;
     for (int i = 0; i < CIRCLE_NUM; i++) {
@@ -207,6 +220,10 @@ void findCircleByContours(cv::Mat &src, std::vector<CircleType> &circles) {    /
         fitCircle(circleContour, c);
         circles.push_back(c);
     }
+    clock_t endOfFitCircle = clock();
+    std::cout << "Time of fit circle: " << double(endOfFitCircle - startOfFitCircle) / CLOCKS_PER_SEC << "s"
+              << std::endl;
+
 
 #ifdef _DEBUG
     cv::Mat pic(src.rows, src.cols, CV_8UC3, cv::Scalar(0, 0, 0));
