@@ -95,11 +95,13 @@ void autoGamma(cv::Mat &src, cv::Mat &dst) {
 void pretreatment(cv::Mat &src, cv::Mat &dst) {
     clock_t start = clock();
     cv::Mat gray, bin, equalize;
-    cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
+//    cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
 
     // 直方图均衡算法
-    cv::equalizeHist(gray, equalize);
-
+    clock_t start_hist = clock();
+    cv::equalizeHist(src, equalize);
+    clock_t end_hist = clock();
+    std::cout << "Time of hist: " << double(end_hist - start_hist) / CLOCKS_PER_SEC << std::endl;
     // gamma矫正
 //    cv::Mat gamma;
 //    autoGamma(gray, gamma);
@@ -109,19 +111,30 @@ void pretreatment(cv::Mat &src, cv::Mat &dst) {
     //cv::imwrite("otsu.jpg", bin);
 
     // 二值化，自适应，先用该算法试试
+    clock_t start_adapt = clock();
     cv::Mat adaptBin;
-    cv::adaptiveThreshold(equalize, adaptBin, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 191, 21);
+    cv::threshold(equalize, adaptBin, 128, 255, cv::THRESH_OTSU);
+//    cv::adaptiveThreshold(equalize, adaptBin, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 191, 21);
     cv::bitwise_not(adaptBin, adaptBin);
+    clock_t end_adapt = clock();
+    std::cout << "Time of adaptive: " << double(end_adapt - start_adapt) / CLOCKS_PER_SEC << std::endl;
+
 
     // 椒盐去噪(中值滤波)
+    clock_t start_blur = clock();
+
     cv::Mat blur;
     cv::medianBlur(adaptBin, dst, 3);
+    clock_t end_blur = clock();
+    std::cout << "Time of blur: " << double(end_blur - start_blur) / CLOCKS_PER_SEC << std::endl;
+//
     clock_t end = clock();
+
 #ifdef DEBUG
     std::cout << "Time of pretreatment: " << double(end - start) / CLOCKS_PER_SEC << "s" << std::endl;
 #endif
 #ifdef DEBUG
-    cv::imwrite("gray.jpg", gray);
+//    cv::imwrite("gray.jpg", gray);
     cv::imwrite("equalize.jpg", equalize);
     cv::imwrite("adaptiveBinary.jpg", adaptBin);
     cv::imwrite("blur.jpg", dst);
@@ -143,18 +156,22 @@ void fitCircle(std::vector<cv::Point> &contour, CircleType &c) {
 }
 
 /*
- * 过滤无效的边缘，返回轮廓下标
+ * 过滤无效的边缘，返回轮廓下标，如果不存在就返回 -1，存在返回个数
  * 主要通过轮廓的面积(> 50)、圆度、以及结构关系判断
  * contours:   边缘
  * hierarchy:  轮廓之间的树形关系
  * contoursIndex: 圆形轮廓下标
  */
-void filterContours(std::vector<std::vector<cv::Point>> &contours, std::vector<cv::Vec4i> &hierarchy,
-                    std::vector<int> &contoursIndex) {
+int filterContours(std::vector<std::vector<cv::Point>> &contours, std::vector<cv::Vec4i> &hierarchy,
+                   std::vector<int> &contoursIndex) {
+    int ret = -1;
     clock_t start = clock();
     std::unordered_map<int, std::vector<int>> map;   // 父子关系图
     double area, arcLen;
     for (int i = 0; i < contours.size(); i++) {
+        if (hierarchy[i][3] == -1) {    // 父节点不存在
+            continue;
+        }
         area = cv::contourArea(contours[i]);
         arcLen = cv::arcLength(contours[i], true);
 
@@ -162,7 +179,7 @@ void filterContours(std::vector<std::vector<cv::Point>> &contours, std::vector<c
             continue;
         }
         double roundness = getRoundness(area, arcLen);
-        if (roundness > 0.175) {
+        if (roundness > 0.4) {
             continue;
         }
         int p = hierarchy[i][3];
@@ -175,20 +192,29 @@ void filterContours(std::vector<std::vector<cv::Point>> &contours, std::vector<c
             continue;
         }
         // todo: 鲁棒性不强...
-        if ((iter->second).size() == CIRCLE_NUM) {    // 误检率要求最低，同一个父节点要求有9个
+        if ((iter->second).size() == CIRCLE_NUM) {    // 误检率要求高，同一个父节点要求有9个
 //            contoursIndex.clear();
 //            contoursIndex.insert(contoursIndex.begin(), iter->second.begin(), iter->second.end());
 #ifdef DEBUG
-//            std::cout << i << ": " << area << ", " << roundness << ", " << hierarchy[i][3] << std::endl;
+            //            std::cout << i << ": " << area << ", " << roundness << ", " << hierarchy[i][3] << std::endl;
             std::cout << "PIndex: " << iter->first << ", Num: " << CIRCLE_NUM << std::endl;
 #endif
             contoursIndex.assign(iter->second.begin(), iter->second.end());
+            clock_t end = clock();
+#ifdef DEBUG
+            std::cout << "Time of filter contour: " << double(end - start) / CLOCKS_PER_SEC << "s" << std::endl;
+#endif
+            return CIRCLE_NUM;
+        } else if ((iter->second).size() >= CIRCLE_NUM) {    //   不承认小于 CIRCLE_NUM 个的
+            contoursIndex.assign(iter->second.begin(), iter->second.end());
+            ret = contoursIndex.size();
         }
     }
     clock_t end = clock();
 #ifdef DEBUG
     std::cout << "Time of filter contour: " << double(end - start) / CLOCKS_PER_SEC << "s" << std::endl;
 #endif
+    return ret;
 }
 
 /*
@@ -211,14 +237,18 @@ void findCircleByContours(cv::Mat &src, std::vector<CircleType> &circles) {    /
 #endif
 
     std::vector<int> contoursIndex;
-    filterContours(contours, hierarchy, contoursIndex); // 圆形轮廓下标
+    int ret = filterContours(contours, hierarchy, contoursIndex); // 圆形轮廓下标
 
+    if (ret == -1) {    // 没找到匹配的目标
+        std::cout << "Can't find Contours" << std::endl;
+        return;
+    }
     // 轮廓
 //    std::vector<std::vector<cv::Point>> circleContours;
     clock_t startOfFitCircle = clock();
     CircleType c;
     std::vector<cv::Point> circleContour;
-    for (int i = 0; i < CIRCLE_NUM; i++) {
+    for (int i = 0; i < contoursIndex.size(); i++) {
         int cIndex = contoursIndex[i];
         circleContour = contours[cIndex];
         fitCircle(circleContour, c);
