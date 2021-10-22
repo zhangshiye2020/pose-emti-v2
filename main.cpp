@@ -26,18 +26,22 @@ void filterContoursByArea(cv::Mat contourAreas, int classes) {
 
 int main(int argc, char **argv) {
     clock_t start = clock();
-    string folder = "C:\\Users\\zsy\\Pictures\\";
-    string filename = "Image_20210929204244455";
+    string folder = "../testpicture/";
+    string filename = "test101";
     string fileExtension = ".bmp";
 
     cv::Mat gray;
     cv::Mat mat = cv::imread(folder + filename + fileExtension, cv::IMREAD_GRAYSCALE);
+    assert(!mat.empty());
 //    cv::imshow("gra",mat);
 //    cv::cvtColor(mat, gray, cv::COLOR_BGR2GRAY);
     cv::Mat dst, pre_src;
-    pretreatment(mat, pre_src);
+//    pretreatment(mat, pre_src);
     vector<CircleType> circles;
-    findCircleByContours(pre_src, circles);
+    vector<vector<cv::Point2f>> contours;
+//    findCircleByContours(pre_src, circles);
+
+    detect(mat, contours, circles);
     clock_t end = clock();
     cout << "Time of total: " << double(end - start) / CLOCKS_PER_SEC << endl;
 

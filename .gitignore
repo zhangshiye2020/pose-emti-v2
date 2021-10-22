@@ -349,6 +349,16 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 
+# Cmake build output
 cmake-build-debug
-.idea
 cmake-build-release
+
+# Emulate Images
+testpicture
+adaptiveBinary.jpg
+blur.jpg
+contours.jpg
+contoursFull.jpg
+first_filter_contours.jpg
+second_filter_contours.jpg
+gamma.jpg
