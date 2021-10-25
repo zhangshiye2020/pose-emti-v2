@@ -118,7 +118,7 @@ void detect(cv::Mat &im, std::vector<std::vector<cv::Point2f>> &contours_f, std:
     pretreatment(im, pre_src);
     std::vector<std::vector<cv::Point>> contours;
     findCircleByContours(pre_src, contours, circles);
-    std::sort(circles.begin(), circles.end(), centerCmp);
+//    std::sort(circles.begin(), circles.end(), centerCmp);
 
     for (int i = 0; i < contours.size(); i++) {
         std::vector<cv::Point2f> ctr_f;
@@ -234,8 +234,6 @@ void filterContoursCore(std::vector<cv::Point2f> &mc, std::vector<float> &radio_
  */
 int filterContours(std::vector<std::vector<cv::Point>> &contours, std::vector<cv::Vec4i> &hierarchy,
                    std::vector<int> &circles_index) {
-    // todo: 算法存在缺陷，需要添加相对位置限制，相对面积限制
-    // todo: 在父节点下这一招未必好使
     int ret = -1;
     clock_t start = clock();
     std::unordered_map<int, std::vector<int>> map_index;   // 父子关系图
