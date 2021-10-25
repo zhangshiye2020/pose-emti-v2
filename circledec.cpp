@@ -263,19 +263,12 @@ int filterContours(std::vector<std::vector<cv::Point>> &contours, std::vector<cv
 
     // 一群轮廓里面找圆
 #ifdef DEBUG
-    cv::Mat first_filter_contours(819, 901, CV_8UC1, cv::Scalar(0, 0, 0));
-    for (auto iter = map_index.begin(); iter != map_index.end(); iter++) {
-        for (int i = 0; i < iter->second.size(); i++) {
-            cv::drawContours(first_filter_contours, contours, (iter->second)[i], cv::Scalar(255, 255, 255));
-            //cv::putText(first_filter_contours, std::to_string(iter->first), cv::Point(mc[i].x, mc[i].y), cv::FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(255, 255, 255));
-        }
-        cv::imwrite("first_filter_contours.jpg", first_filter_contours);
-    }
+
 #endif // DEBUG
 
     for (auto iter = map_index.begin(); iter != map_index.end(); iter++) {  // 将所有轮廓按照父轮廓分割成x组
         int p = iter->first;
-        if (iter->second.size() < 9) {  // 至少9个轮廓
+        if (iter->second.size() < CIRCLE_NUM) {  // 至少circle_num个轮廓
             continue;
         }
         std::vector<std::vector<cv::Point>> contours_it;
@@ -292,11 +285,6 @@ int filterContours(std::vector<std::vector<cv::Point>> &contours, std::vector<cv
         filterContoursCore(mc, radio_v, map_index.at(p), circles_index); // 一组轮廓中尝试提取出CIRCLE_NUM个圆
         if (circles_index.size() == CIRCLE_NUM) {   // 说明找到了
 #ifdef DEBUG
-            cv::Mat second_filter_contours(819, 901, CV_8UC1, cv::Scalar(0, 0, 0));
-            for (auto iter = circles_index.begin(); iter != circles_index.end(); iter++) {
-                cv::drawContours(second_filter_contours, contours, *iter, cv::Scalar(255, 255, 255));
-                cv::imwrite("second_filter_contours.jpg", second_filter_contours);
-            }
             std::cout << "Find Target, Parent = " << p << std::endl;
 #endif // DEBUG
             return CIRCLE_NUM;
