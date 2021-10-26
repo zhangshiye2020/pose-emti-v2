@@ -7,13 +7,14 @@
  */
 
 #define DEBUG
-#define CIRCLE_NUM 4
+#define CIRCLE_NUM 9
 #define THRESH_MIN_AREA 50     // 最小面积要求
 #define THRESH_ROUNDNESS 0.3   // 圆度要求，大于该圆度的统统不算
 #define THRESH_MAZ_ERR   1000  // 面积差异的距离，这个未必有用
 #define GET_ROUNDNESS(area, arcLen) ( 1 - ((4 * CV_PI * (area))/((arcLen) * (arcLen))))
 #define THRESH_LINE_R  0.5       //  圆心是否在同一行上所允许的误差，允许误差多少个r
-#define THRESH_DIS  1   // 圆心间隔的距离，误差最多 1r
+#define sqrt2 1.414213562373095
+#define THRESH_DIS  1.3   // 圆心间隔的距离，误差最多 1r
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc.hpp>
@@ -25,10 +26,11 @@
 #include <numeric>
 #include <queue>
 
-static int rows = 0;
-static int cols = 0;
+extern int rows;
+extern int cols;
 
 typedef cv::Vec3f CircleType;    // float x,y,r
+
 void
 findCircleByContours(cv::Mat &src, std::vector<std::vector<cv::Point>> &contours, std::vector<CircleType> &circles);
 

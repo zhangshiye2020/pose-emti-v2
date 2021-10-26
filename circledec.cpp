@@ -1,5 +1,8 @@
 ﻿#include "circledec.h"
 
+int rows;
+int cols;
+
 /*
  * gamma矫正
  */
@@ -165,8 +168,9 @@ void BFSTrace(std::vector<std::vector<bool>> &related_map, std::vector<int> &con
 
 void filterContoursCore(std::vector<cv::Point2f> &mc, std::vector<float> &radio_v, std::vector<int> &contours_index,
                         std::vector<int> &circles_index) {
+
     // 允许误差 3.5r-4.5r之间
-    bool related; // 有关系，表示满足near_and_in_line关系
+    bool related = false; // 有关系，表示满足near_and_in_line关系
     int length = mc.size();
     std::vector<std::vector<bool>> related_map(length, std::vector<bool>(length));
     for (int i = 0; i < length; i++) {
@@ -187,6 +191,15 @@ void filterContoursCore(std::vector<cv::Point2f> &mc, std::vector<float> &radio_
             related_map[i][j] = related;
         }
     }
+#ifdef DEBUG
+    for (int i = 0; i < length; i++) {
+        for (int j = 0; j < length; j++) {
+            std::cout << related_map[i][j] << " ";
+        }
+        std::cout << std::endl;
+    }
+#endif
+
     BFSTrace(related_map, contours_index, circles_index, length);
 }
 
@@ -224,16 +237,15 @@ int filterContours(std::vector<std::vector<cv::Point>> &contours, std::vector<cv
         map_arcLen[p].push_back(arcLen);
         keys.push_back(p);
     }
-    //todo: 画出第一次过滤后的轮廓
-#ifdef DEBUG
-    cv::Mat filter1(rows, cols, CV_8UC3, cv::Scalar(0, 0, 0));
-    for (auto iter = map_index.begin(); iter != map_index.end(); iter++) {
-        for (auto idx: iter->second) {
-            cv::drawContours(filter1, contours, idx, cv::Scalar(255, 255, 255));
-        }
-    }
-    cv::imwrite("filter1.jpg", filter1);
-#endif
+//#ifdef DEBUG
+//    cv::Mat filter1(rows, cols, CV_8UC3, cv::Scalar(0, 0, 0));
+//    for (auto iter = map_index.begin(); iter != map_index.end(); iter++) {
+//        for (auto idx: iter->second) {
+//            cv::drawContours(filter1, contours, idx, cv::Scalar(255, 255, 255));
+//        }
+//    }
+//    cv::imwrite("filter1.jpg", filter1);
+//#endif
     // filter step 2
     for (auto iter = map_index.begin(); iter != map_index.end(); iter++) {  // 将所有轮廓按照父轮廓分割成x组
         int p = iter->first;
@@ -252,10 +264,19 @@ int filterContours(std::vector<std::vector<cv::Point>> &contours, std::vector<cv
         getMcOfContours(contours_it, mc);
 
         filterContoursCore(mc, radio_v, map_index.at(p), circles_index); // 一组轮廓中尝试提取出CIRCLE_NUM个圆
-        if (circles_index.size() == CIRCLE_NUM) {   // 说明找到了
 #ifdef DEBUG
-            std::cout << "Find Target, Parent = " << p << std::endl;
+        cv::Mat filter1(rows, cols, CV_8UC3, cv::Scalar(0, 0, 0));
+        for (int i = 0; i < iter->second.size(); i++) {
+            cv::drawContours(filter1, contours, iter->second[i], cv::Scalar(255, 255, 255));
+            cv::putText(filter1, std::to_string(i), cv::Point(mc[i].x, mc[i].y), cv::FONT_HERSHEY_SIMPLEX, 1,
+                        cv::Scalar(255, 255, 255));
+        }
+        std::string filename = "filter1" + std::to_string(iter->first) + ".jpg";
+        cv::imwrite(filename, filter1);
+        std::cout << "Find Target, Parent = " << p << std::endl;
 #endif // DEBUG
+        if (circles_index.size() == CIRCLE_NUM) {   // 说明找到了
+
             return CIRCLE_NUM;
         }
     }

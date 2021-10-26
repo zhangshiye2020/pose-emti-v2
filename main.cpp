@@ -4,6 +4,9 @@
 #include "circledec.h"
 #include <time.h>
 
+extern int rows;
+extern int cols;
+
 using namespace std;
 
 /*
@@ -26,9 +29,9 @@ void filterContoursByArea(cv::Mat contourAreas, int classes) {
 
 int main(int argc, char **argv) {
     clock_t start = clock();
-    string folder = "../c4/";
-    string filename = "Image_20211025152141212";
-    string fileExtension = ".bmp";
+    string folder = "C:\\Users\\shye\\Documents\\";
+    string filename = "微信图片_20211026174506";
+    string fileExtension = ".jpg";
 
     cv::Mat gray;
     cv::Mat mat = cv::imread(folder + filename + fileExtension, cv::IMREAD_GRAYSCALE);
