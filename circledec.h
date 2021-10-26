@@ -25,6 +25,9 @@
 #include <numeric>
 #include <queue>
 
+static int rows = 0;
+static int cols = 0;
+
 typedef cv::Vec3f CircleType;    // float x,y,r
 void
 findCircleByContours(cv::Mat &src, std::vector<std::vector<cv::Point>> &contours, std::vector<CircleType> &circles);

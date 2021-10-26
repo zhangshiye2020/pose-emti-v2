@@ -224,6 +224,16 @@ int filterContours(std::vector<std::vector<cv::Point>> &contours, std::vector<cv
         map_arcLen[p].push_back(arcLen);
         keys.push_back(p);
     }
+    //todo: 画出第一次过滤后的轮廓
+#ifdef DEBUG
+    cv::Mat filter1(rows, cols, CV_8UC3, cv::Scalar(0, 0, 0));
+    for (auto iter = map_index.begin(); iter != map_index.end(); iter++) {
+        for (auto idx: iter->second) {
+            cv::drawContours(filter1, contours, idx, cv::Scalar(255, 255, 255));
+        }
+    }
+    cv::imwrite("filter1.jpg", filter1);
+#endif
     // filter step 2
     for (auto iter = map_index.begin(); iter != map_index.end(); iter++) {  // 将所有轮廓按照父轮廓分割成x组
         int p = iter->first;

@@ -33,6 +33,8 @@ int main(int argc, char **argv) {
     cv::Mat gray;
     cv::Mat mat = cv::imread(folder + filename + fileExtension, cv::IMREAD_GRAYSCALE);
     assert(!mat.empty());
+    rows = mat.rows;
+    cols = mat.cols;
 //    cv::imshow("gra",mat);
 //    cv::cvtColor(mat, gray, cv::COLOR_BGR2GRAY);
     cv::Mat dst, pre_src;
