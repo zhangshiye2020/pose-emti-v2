@@ -4,13 +4,12 @@
 /*
  * zhangshiye, 2021-9
  * 圆度：程序中圆度定义与外界不一样，为 1 - roundness
- *
  */
 
 #define DEBUG
 #define CIRCLE_NUM 4
-#define BOARD_ROWS 2
-#define BOARD_COLS 2
+#define BOARD_ROWS 3
+#define BOARD_COLS 3
 #define THRESH_MIN_AREA 50     // 最小面积要求
 #define THRESH_ROUNDNESS 0.3   // 圆度要求，大于该圆度的统统不算
 #define THRESH_MAZ_ERR   1000  // 面积差异的距离，这个未必有用
@@ -34,8 +33,6 @@ findCircleByContours(cv::Mat &src, std::vector<std::vector<cv::Point>> &contours
 
 void gammaCorrection(cv::Mat &src, cv::Mat &dst, double gamma);
 
-void autoGamma(cv::Mat &src, cv::Mat &dst);
-
 void pretreatment(cv::Mat &src, cv::Mat &dst);
 
 void fitCircle(std::vector<cv::Point> &contour, CircleType &c);
@@ -44,7 +41,8 @@ void detect(cv::Mat &im, std::vector<std::vector<cv::Point2f>> &contours_f, std:
 
 void getCenterFromContours(std::vector<cv::Point> &contour, cv::Point2f &center);
 
-void filterContoursCore(std::vector<cv::Point2f> &mc, std::vector<float> &radio_v, std::vector<int>& contours_index, std::vector<int>& circles_index);
+void filterContoursCore(std::vector<cv::Point2f> &mc, std::vector<float> &radio_v, std::vector<int> &contours_index,
+                        std::vector<int> &circles_index);
 
 int filterContours(std::vector<std::vector<cv::Point>> &contours, std::vector<cv::Vec4i> &hierarchy,
                    std::vector<int> &circles_index);
@@ -53,14 +51,17 @@ bool centerCmp(CircleType &c1, CircleType &c2);
 
 void sortCircles(std::vector<CircleType> &centers);
 
-void getMcOfContours(std::vector<std::vector<cv::Point>>& contours, std::vector<cv::Point2f> &mc);
+void getMcOfContours(std::vector<std::vector<cv::Point>> &contours, std::vector<cv::Point2f> &mc);
 
 bool near_point(cv::Point2f p1, cv::Point2f p2, float r);
+
+void BFSTrace(std::vector<std::vector<bool>> &related_map, std::vector<int> &contours_index,
+              std::vector<int> &circles_index, int length);
 
 inline double getRoundness(double area, double arcLen) {    // 圆度似乎与正余弦有关，永远不可能大于1
     return 1 - ((4 * CV_PI * area) / (arcLen * arcLen));
 }
 
-void getCenterFromContours(std::vector<std::vector<cv::Point2f>>& contour, std::vector<cv::Point2f>& center);
+void getCenterFromContours(std::vector<std::vector<cv::Point2f>> &contour, std::vector<cv::Point2f> &center);
 
 #endif // __CIRCLEDEC_H_

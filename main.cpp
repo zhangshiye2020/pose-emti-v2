@@ -26,8 +26,8 @@ void filterContoursByArea(cv::Mat contourAreas, int classes) {
 
 int main(int argc, char **argv) {
     clock_t start = clock();
-    string folder = "../testpicture/";
-    string filename = "test101";
+    string folder = "../c4/";
+    string filename = "Image_20211025152141212";
     string fileExtension = ".bmp";
 
     cv::Mat gray;

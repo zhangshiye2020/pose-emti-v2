@@ -15,38 +15,6 @@ void gammaCorrection(cv::Mat &src, cv::Mat &dst, double gamma) {
 }
 
 /*
-* 自动gamma矫正，不好用，损失太多细节
-*/
-void autoGamma(cv::Mat &src, cv::Mat &dst) {
-    const int channels = src.channels();
-    const int type = src.type();
-    assert(type == CV_8U || type == CV_8UC3);    // 只限8bit
-
-    // 计算中位数
-    cv::Scalar mean_scalar = cv::mean(src);
-    double mean = mean_scalar[0];
-
-    // 某篇论文的gamma value设置值
-    double gamma_value = std::log10(0.5) / std::log10(mean / 255);
-//    GammaCorrection(src, dst, gamma_value);
-
-//    double gamma_value = 0.3;
-    // 归一化，然后gamma变换
-    cv::Mat norm, gamma;
-    cv::normalize(src, norm, 1.0, 0.0, cv::NORM_MINMAX, CV_64F);
-    //src.convertTo(norm,CV_64F,1/255.0);
-    cv::pow(norm, gamma_value, gamma);
-
-    cv::convertScaleAbs(gamma, dst, 255.0);
-
-
-#ifdef DEBUG
-    cv::imwrite("gamma.jpg", dst);
-#endif
-
-}
-
-/*
 * 预处理，包含一些图像增强方法，主要包括直方图均衡，二值化自适应，中值滤波
 */
 void pretreatment(cv::Mat &src, cv::Mat &dst) {
@@ -152,21 +120,47 @@ bool near_point(cv::Point2f p1, cv::Point2f p2, float r) {
     if (dis < min_dis_err || dis > max_dis_err) {   // 满足
         return false;
     }
-//    float dis_x = std::abs(p1.x - p2.x);  //假设同y
-//    float dis_y = std::abs(p1.y - p2.y);    //假设同x
-//    float min_line_err = dis - THRESH_LINE_R * r;   // 最小距离 dis - 0.5r
-//    float max_line_err = dis + THRESH_LINE_R * r;   // 最大距离 dis + 0.5r
-//    if ((dis_x < min_line_err || dis_x > max_line_err) && (dis_y < min_line_err || dis_y > max_line_err)) {
-//        std::cout << "exe times: " << std::endl;
-//        return false;
-//    }
     return true;
 }
+
 /*
  * 点是否可以与其他点组成直线???
  */
 void in_line(std::vector<cv::Point2f> points) {
 
+}
+
+void BFSTrace(std::vector<std::vector<bool>> &related_map, std::vector<int> &contours_index,
+              std::vector<int> &circles_index, int length) {
+    std::vector<bool> visit(length, false);
+
+    for (int i = 0; i < length; i++) {
+        circles_index.clear();
+        visit[i] = true;
+        int sum = std::accumulate(related_map[i].begin(), related_map[i].end(), 0); // 连接数量
+        if (sum == 0) {
+            continue;
+        }
+        std::queue<int> related_q;
+        related_q.push(i);
+        int cnt = 0;
+        circles_index.push_back(contours_index[i]);
+        while (!related_q.empty()) {
+            int root = related_q.front();
+            related_q.pop();
+            for (int j = 0; j < length; j++) {
+                if (!visit[j] && related_map[root][j]) {
+                    cnt++;
+                    related_q.push(j);
+                    visit[j] = true;
+                    circles_index.push_back(contours_index[j]);
+                }
+            }
+        }
+        if (circles_index.size() == CIRCLE_NUM) {
+            return;
+        }
+    }
 }
 
 void filterContoursCore(std::vector<cv::Point2f> &mc, std::vector<float> &radio_v, std::vector<int> &contours_index,
@@ -193,36 +187,7 @@ void filterContoursCore(std::vector<cv::Point2f> &mc, std::vector<float> &radio_
             related_map[i][j] = related;
         }
     }
-
-    std::vector<bool> vitis(length, false);
-
-    for (int i = 0; i < length; i++) {
-        circles_index.clear();
-        vitis[i] = true;
-        int sum = std::accumulate(related_map[i].begin(), related_map[i].end(), 0); // 连接数量
-        if (sum == 0) {
-            continue;
-        }
-        std::queue<int> related_q;
-        related_q.push(i);
-        int cnt = 0;
-        circles_index.push_back(contours_index[i]);
-        while (!related_q.empty()) {
-            int root = related_q.front();
-            related_q.pop();
-            for (int j = 0; j < length; j++) {
-                if (!vitis[j] && related_map[root][j]) {
-                    cnt++;
-                    related_q.push(j);
-                    vitis[j] = true;
-                    circles_index.push_back(contours_index[j]);
-                }
-            }
-        }
-        if (circles_index.size() == CIRCLE_NUM) {
-            return;
-        }
-    }
+    BFSTrace(related_map, contours_index, circles_index, length);
 }
 
 /*
@@ -241,6 +206,7 @@ int filterContours(std::vector<std::vector<cv::Point>> &contours, std::vector<cv
     std::unordered_map<int, std::vector<float>> map_arcLen;
     std::vector<int> keys;
     double area, arcLen;
+    // filter step 1
     for (int i = 0; i < contours.size(); i++) { // 粗过滤
         area = cv::contourArea(contours[i]);
         arcLen = cv::arcLength(contours[i], true);
@@ -258,12 +224,7 @@ int filterContours(std::vector<std::vector<cv::Point>> &contours, std::vector<cv
         map_arcLen[p].push_back(arcLen);
         keys.push_back(p);
     }
-
-    // 一群轮廓里面找圆
-#ifdef DEBUG
-
-#endif // DEBUG
-
+    // filter step 2
     for (auto iter = map_index.begin(); iter != map_index.end(); iter++) {  // 将所有轮廓按照父轮廓分割成x组
         int p = iter->first;
         if (iter->second.size() < CIRCLE_NUM) {  // 至少circle_num个轮廓
