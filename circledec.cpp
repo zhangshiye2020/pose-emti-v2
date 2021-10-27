@@ -199,7 +199,7 @@ void filterContoursCore(std::vector<cv::Point2f> &mc, std::vector<float> &radio_
         std::cout << std::endl;
     }
 #endif
-
+    // todo: 联通点数量至少 > 1
     BFSTrace(related_map, contours_index, circles_index, length);
 }
 

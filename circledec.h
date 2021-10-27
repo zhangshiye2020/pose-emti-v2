@@ -7,7 +7,7 @@
  */
 
 #define DEBUG
-#define CIRCLE_NUM 9
+#define CIRCLE_NUM 4
 #define THRESH_MIN_AREA 50     // 最小面积要求
 #define THRESH_ROUNDNESS 0.3   // 圆度要求，大于该圆度的统统不算
 #define THRESH_MAZ_ERR   1000  // 面积差异的距离，这个未必有用

@@ -29,9 +29,9 @@ void filterContoursByArea(cv::Mat contourAreas, int classes) {
 
 int main(int argc, char **argv) {
     clock_t start = clock();
-    string folder = "C:\\Users\\shye\\Documents\\";
-    string filename = "微信图片_20211026174506";
-    string fileExtension = ".jpg";
+    string folder = "../c4x2000/";
+    string filename = "Image_20211027094546782";
+    string fileExtension = ".bmp";
 
     cv::Mat gray;
     cv::Mat mat = cv::imread(folder + filename + fileExtension, cv::IMREAD_GRAYSCALE);
