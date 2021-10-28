@@ -84,11 +84,14 @@ void fitCircle(std::vector<cv::Point> &contour, CircleType &c) {
 /*
  * 检测，总程序封装
  */
-void detect(cv::Mat &im, std::vector<std::vector<cv::Point2f>> &contours_f, std::vector<CircleType> &circles) {
+int detect(cv::Mat &im, std::vector<std::vector<cv::Point2f>> &contours_f, std::vector<CircleType> &circles) {
     cv::Mat pre_src;
     pretreatment(im, pre_src);
     std::vector<std::vector<cv::Point>> contours;
     findCircleByContours(pre_src, contours, circles);
+    if(circles.empty()) {
+        return false;
+    }
 //    std::sort(circles.begin(), circles.end(), centerCmp);
 
     for (int i = 0; i < contours.size(); i++) {
@@ -96,6 +99,7 @@ void detect(cv::Mat &im, std::vector<std::vector<cv::Point2f>> &contours_f, std:
         cv::Mat(contours[i]).convertTo(ctr_f, cv::Mat(ctr_f).type());
         contours_f.push_back(ctr_f);
     }
+    return circles.size();
 }
 
 /*

@@ -13,7 +13,7 @@
 #define THRESH_MAZ_ERR   1000  // 面积差异的距离，这个未必有用
 #define GET_ROUNDNESS(area, arcLen) ( 1 - ((4 * CV_PI * (area))/((arcLen) * (arcLen))))
 #define THRESH_LINE_R  0.5       //  圆心是否在同一行上所允许的误差，允许误差多少个r
-#define sqrt2 1.414213562373095
+//#define sqrt2 1.414213562373095
 #define THRESH_DIS  1.3   // 圆心间隔的距离，误差最多 1r
 
 #include <opencv2/opencv.hpp>
@@ -40,7 +40,7 @@ void pretreatment(cv::Mat &src, cv::Mat &dst);
 
 void fitCircle(std::vector<cv::Point> &contour, CircleType &c);
 
-void detect(cv::Mat &im, std::vector<std::vector<cv::Point2f>> &contours_f, std::vector<CircleType> &circles);
+int detect(cv::Mat &im, std::vector<std::vector<cv::Point2f>> &contours_f, std::vector<CircleType> &circles);
 
 void getCenterFromContours(std::vector<cv::Point> &contour, cv::Point2f &center);
 
