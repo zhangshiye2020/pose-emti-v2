@@ -25,11 +25,6 @@ void pretreatment(cv::Mat &src, cv::Mat &dst) {
     cv::Mat gray, bin, equalize;
 //    cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
 
-    // 直方图均衡算法
-//    clock_t start_hist = clock();
-//    cv::equalizeHist(src, equalize);
-//    clock_t end_hist = clock();
-//    std::cout << "Time of hist: " << double(end_hist - start_hist) / CLOCKS_PER_SEC << std::endl;
     // gamma矫正
     cv::Mat gamma;
     gammaCorrection(src, gamma, 0.5);
@@ -83,6 +78,7 @@ void fitCircle(std::vector<cv::Point> &contour, CircleType &c) {
 
 /*
  * 检测，总程序封装
+ * return: -1,表示未找到；非-1,表示找到了且返回值代表个数
  */
 int detect(cv::Mat &im, std::vector<std::vector<cv::Point2f>> &contours_f, std::vector<CircleType> &circles) {
     cv::Mat pre_src;
@@ -90,7 +86,7 @@ int detect(cv::Mat &im, std::vector<std::vector<cv::Point2f>> &contours_f, std::
     std::vector<std::vector<cv::Point>> contours;
     findCircleByContours(pre_src, contours, circles);
     if(circles.empty()) {
-        return false;
+        return -1;
     }
 //    std::sort(circles.begin(), circles.end(), centerCmp);
 
@@ -241,15 +237,7 @@ int filterContours(std::vector<std::vector<cv::Point>> &contours, std::vector<cv
         map_arcLen[p].push_back(arcLen);
         keys.push_back(p);
     }
-//#ifdef DEBUG
-//    cv::Mat filter1(rows, cols, CV_8UC3, cv::Scalar(0, 0, 0));
-//    for (auto iter = map_index.begin(); iter != map_index.end(); iter++) {
-//        for (auto idx: iter->second) {
-//            cv::drawContours(filter1, contours, idx, cv::Scalar(255, 255, 255));
-//        }
-//    }
-//    cv::imwrite("filter1.jpg", filter1);
-//#endif
+
     // filter step 2
     for (auto iter = map_index.begin(); iter != map_index.end(); iter++) {  // 将所有轮廓按照父轮廓分割成x组
         int p = iter->first;

@@ -25,6 +25,7 @@
 #include <cmath>
 #include <numeric>
 #include <queue>
+#include <filesystem>
 
 extern int rows;
 extern int cols;

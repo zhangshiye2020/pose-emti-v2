@@ -3,6 +3,7 @@
 #include <opencv2/imgproc.hpp>
 #include "circledec.h"
 #include <time.h>
+#include <codecvt>
 
 extern int rows;
 extern int cols;
@@ -27,38 +28,41 @@ void filterContoursByArea(cv::Mat contourAreas, int classes) {
     }
 }
 
-int main(int argc, char **argv) {
-    clock_t start = clock();
-    string folder = "../c4x2000/";
-    string filename = "Image_20211027094546782";
-    string fileExtension = ".bmp";
-
-    cv::Mat gray;
-    cv::Mat mat = cv::imread(folder + filename + fileExtension, cv::IMREAD_GRAYSCALE);
-    assert(!mat.empty());
-    rows = mat.rows;
-    cols = mat.cols;
-//    cv::imshow("gra",mat);
-//    cv::cvtColor(mat, gray, cv::COLOR_BGR2GRAY);
-    cv::Mat dst, pre_src;
-//    pretreatment(mat, pre_src);
-    vector<CircleType> circles;
-    vector<vector<cv::Point2f>> contours;
-//    findCircleByContours(pre_src, circles);
-
-    detect(mat, contours, circles);
-    clock_t end = clock();
-    cout << "Time of total: " << double(end - start) / CLOCKS_PER_SEC << endl;
+void test_batch(string dir_path) {
+    namespace fs = std::filesystem;
+    for (const auto &entry: fs::directory_iterator(dir_path)) {
+        u8string path_string{entry.path().u8string()};
+        u8string filename{entry.path().filename().u8string()};
+        wstring_convert<codecvt_utf8<char8_t>, char8_t> convert;
+//        to_bytes(path_string);
+        cv::Mat src = cv::imread(convert.to_bytes(path_string), cv::IMREAD_GRAYSCALE);
+        assert(!src.empty());
+        rows = src.rows;
+        cols = src.cols;
+        vector<CircleType> circles;
+        vector<vector<cv::Point2f>> contours;
+        int ret = detect(src, contours, circles);
+        if (ret == -1) {
+            cout << "Cann't find contours in file " << convert.to_bytes(filename) << endl;
+            continue;
+        } else {
+            cout << "Found contours in file " << convert.to_bytes(filename) << endl;
+        }
 
 #ifdef DEBUG
-    cout << "Time of total: " << double(end - start) / CLOCKS_PER_SEC << endl;
-    for (int i = 0; i < circles.size(); i++) {
-        cv::Vec3f c = circles[i];
-        cv::Point center(c[0], c[1]);
-        cv::circle(mat, center, c[2], cv::Scalar(255, 255, 255), cv::FILLED);
-    }
-    cv::imwrite(filename + ".bmp", mat);
+//        cout << "Time of total: " << double(end - start) / CLOCKS_PER_SEC << endl;
+        for (int i = 0; i < circles.size(); i++) {
+            cv::Vec3f c = circles[i];
+            cv::Point center(c[0], c[1]);
+            cv::circle(src, center, c[2], cv::Scalar(255, 255, 255), cv::FILLED);
+        }
+        cv::imwrite(convert.to_bytes(filename), src);
 #endif
+    }
+}
+
+int main(int argc, char **argv) {
+    test_batch("../c4x2000");
 
     return 0;
 }
